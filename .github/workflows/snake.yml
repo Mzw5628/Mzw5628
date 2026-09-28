@@ -1,15 +1,42 @@
-name: generate snake animation
+name: Daily Empty Commit & Generate Snake
 
 on:
   schedule:
-    - cron: "0 0 * * *"
-  workflow_dispatch:
+    - cron: "0 0 * * *"   # 每天 UTC 0点 (北京时间早上8点) 自动执行
+  workflow_dispatch:      # 允许手动点击触发测试
   push:
     branches:
       - main
 
 jobs:
-  generate:
+  # 任务1：每天在 main 分支打一个空卡（刷绿格子，不产生任何文件）
+  empty-commit:
+    permissions: 
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Make an empty commit and push
+        run: |
+          # 拉取最新代码防止冲突
+          git pull origin main --rebase
+          # 核心：允许空提交
+          git commit --allow-empty -m "chore: daily empty commit $(date +'%Y-%m-%d')"
+          git push
+
+  # 任务2：生成贪吃蛇动画
+  # needs: empty-commit 表示等上面的空提交完成后，再生成贪吃蛇，这样能捕捉到最新的格子
+  generate-snake:
+    needs: empty-commit
     permissions: 
       contents: write
     runs-on: ubuntu-latest
