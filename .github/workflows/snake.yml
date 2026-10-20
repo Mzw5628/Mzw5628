@@ -10,7 +10,8 @@ on:
 
 jobs:
   # 任务1：每天在 main 分支打一个空卡（刷绿格子，不产生任何文件）
-  empty-commit:
+  # 注意：空提交不会被 GitHub 计入贡献图，所以下面已改为向 activity.log 追加真实内容
+  daily-commit:
     permissions: 
       contents: write
     runs-on: ubuntu-latest
@@ -25,18 +26,18 @@ jobs:
           git config --global user.name "Mzw5628"
           git config --global user.email "weiz1059@gmail.com"
 
-      - name: Make an empty commit and push
+      - name: Make a real commit and push
         run: |
-          # 拉取最新代码防止冲突
-          git pull origin main --rebase
-          # 核心：允许空提交
-          git commit --allow-empty -m "chore: daily empty commit $(date +'%Y-%m-%d')"
-          git push
+          # 向 activity.log 追加当前时间，产生实际变更
+          echo "Daily activity: $(date -u +'%Y-%m-%d %H:%M:%S UTC') run=${{ github.run_id }}" >> activity.log
+          git add activity.log
+          git commit -m "chore: daily activity $(date -u +'%Y-%m-%d')"
+          git push origin main
 
   # 任务2：生成贪吃蛇动画
-  # needs: empty-commit 表示等上面的空提交完成后，再生成贪吃蛇，这样能捕捉到最新的格子
+  # needs: daily-commit 表示等上面的提交完成后，再生成贪吃蛇，这样能捕捉到最新的格子
   generate-snake:
-    needs: empty-commit
+    needs: daily-commit
     permissions: 
       contents: write
     runs-on: ubuntu-latest
